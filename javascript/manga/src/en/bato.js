@@ -7,7 +7,7 @@ const mangayomiSources = [{
     "typeSource": "multi",
     "itemType": 0,
     "version": "0.0.1",
-    "pkgPath": "src/en/bato.js",
+    "pkgPath": "manga/src/en/bato.js",
     "notes": ""
 }];
 
