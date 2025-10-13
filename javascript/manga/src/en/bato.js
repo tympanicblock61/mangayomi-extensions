@@ -66,7 +66,15 @@ class DefaultExtension extends MProvider {
         return this.mangaListFromPage(body, hasNextPage);
     }
     async search(query, page, filters) {
-        throw new Error("search not implemented");
+       // ignore filters for now
+       let headers = getHeaders(this.source.baseUrl);
+       let res = await client.get(
+         `${this.source.baseUrl}/search?word=${query}&page=${page}`,
+         headers
+       )
+       
+       // simple just return true 
+       return this.mangaListFromPage(res.body, true);
     }
     
     statusCode(status) {
