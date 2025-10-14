@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart/manga/manga_source_list.dart';
 import 'dart/novel/novel_source_list.dart';
+import 'dart/anime/anime_source_list.dart';
 import 'model/source.dart';
 
 void main() {
@@ -12,6 +13,9 @@ void main() {
   );
   genNovel(
     jsSources.where((element) => element.itemType!.name == "novel").toList(),
+  );
+  genAnime(
+    jsSources.where((element) => element.itemType!.name == "anime").toList(),
   );
 }
 
@@ -40,6 +44,21 @@ void genNovel(List<Source> jsNovelSourceList) {
   final jsonString = jsonEncode(jsonList);
 
   final file = File('novel_index.json');
+  file.writeAsStringSync(jsonString);
+
+  log('JSON file created: ${file.path}');
+}
+
+void genAnime(List<Source> jsAnimesourceList) {
+  List<Source> animeSources = [];
+  animeSources.addAll(dartAnimesourceList);
+  animeSources.addAll(jsAnimesourceList);
+  final List<Map<String, dynamic>> jsonList = animeSources
+    .map((source) => source.toJson())
+    .toList();
+  final jsonString = jsonEncode(jsonList);
+
+  final file = File('anime_index.json');
   file.writeAsStringSync(jsonString);
 
   log('JSON file created: ${file.path}');
