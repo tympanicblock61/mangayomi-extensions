@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "isManga": true,
     "isNsfw": true,
     "itemType": 0,
-    "version": "0.0.3",
+    "version": "0.0.5",
     "pkgPath": "manga/src/all/bato.js",
     "notes": ""
 }];
@@ -178,7 +178,7 @@ class DefaultExtension extends MProvider {
             name: chapter["data"]["dname"],
             url: this.baseUrl+chapter["data"]["urlPath"],
             dateUpload: String(new Date(chapter["data"]["datePublic"]).getTime()),
-            scanlator: chapter["data"]["userNode"]["data"]["name"],
+            scanlator: chapter?.data?.userNode?.data?.name || "Unknown",
           })
         }
         return {
