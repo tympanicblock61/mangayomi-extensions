@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "isManga": true,
     "isNsfw": true,
     "itemType": 0,
-    "version": "0.0.5",
+    "version": "0.0.6",
     "pkgPath": "manga/src/all/bato.js",
     "notes": ""
 }];
@@ -173,7 +173,7 @@ class DefaultExtension extends MProvider {
         });
         let chapters = [];
 
-        for (const chapter of chaps) {
+        for (const chapter of chaps.reverse()) {
           chapters.push({
             name: chapter["data"]["dname"],
             url: this.baseUrl+chapter["data"]["urlPath"],
