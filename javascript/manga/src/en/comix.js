@@ -1,6 +1,6 @@
 const mangayomiSources = [{
     "name": "Comix",
-    "lang": "all",
+    "lang": "en",
     "baseUrl": "https://comix.to",
     "apiUrl": "https://comix.to/api",
     "iconUrl": "https://comix.to/images/icon_512x512.png",
@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.0.2",
+    "version": "0.0.3",
     "pkgPath": "manga/src/all/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
