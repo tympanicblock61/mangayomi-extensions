@@ -8,8 +8,8 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.0.3",
-    "pkgPath": "manga/src/all/comix.js",
+    "version": "0.0.4",
+    "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
 
