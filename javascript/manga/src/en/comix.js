@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.0.4",
+    "version": "0.0.5",
     "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
@@ -303,7 +303,7 @@ class DefaultExtension extends MProvider {
             const decoded = this.decodeFlight(entry);
             if (!decoded) continue;
 
-            const data = decoded[3];
+            const data = decoded[1][3];
             if (!data?.chapter) continue;
 
             const c = data.chapter;
