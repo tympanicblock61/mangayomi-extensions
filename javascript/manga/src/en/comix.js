@@ -3,12 +3,12 @@ const mangayomiSources = [{
     "lang": "en",
     "baseUrl": "https://comix.to",
     "apiUrl": "https://comix.to/api",
-    "iconUrl": "https://comix.to/images/icon_512x512.png",
+    "iconUrl": "https://www.google.com/s2/favicons?sz=512&domain=https://comix.to",
     "typeSource": "single",
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.0.5",
+    "version": "0.1.0",
     "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
@@ -21,7 +21,6 @@ const StatusMap = {
     "not_yet_released": 4,
     "unknown": 5
 }
-
 class KeyGenerator {
     constructor() {
         this.BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -103,21 +102,6 @@ class KeyGenerator {
         return (pad ? out.slice(0, pad - 3) : out) + '==='.slice(pad || 3);
     }
 
-    encodeUTF8(str) {
-        const out = [];
-        for (let i = 0; i < str.length; i++) {
-            let cp = str.charCodeAt(i);
-            if (cp < 0x80) {
-                out.push(cp);
-            } else if (cp < 0x800) {
-                out.push(0xC0 | (cp >> 6), 0x80 | (cp & 0x3F));
-            } else {
-                out.push(0xE0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F));
-            }
-        }
-        return new Uint8Array(out);
-    }
-
     rc4(key, data) {
         const s = new Uint8Array(256);
         for (let i = 0; i < 256; i++) s[i] = i;
@@ -150,8 +134,14 @@ class KeyGenerator {
         return new Uint8Array(out);
     }
 
+    encodeURLElement(path) {
+        const str = encodeURIComponent(path);
+        const bytes = new Uint8Array(str.length);
+        for (let i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i);
+        return bytes;
+    }
     generate(path) {
-        let bytes = this.encodeUTF8(decodeURIComponent(path + ':0:1'));
+        let bytes = this.encodeURLElement(path);
         bytes = this.round(bytes, 0);
         bytes = this.round(bytes, 3);
         bytes = this.round(bytes, 6);
@@ -159,6 +149,28 @@ class KeyGenerator {
         bytes = this.round(bytes, 12);
         return this.base64Encode(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
     }
+}
+
+function parseRelativeDate(str) {
+    const now = Date.now();
+
+    const match = str.match(/^(\d+)\s*(s|m|h|d|w|mos|y)$/i);
+    if (!match) return null;
+    console.log(match);
+    const value = parseInt(match[1], 10);
+    const unit = match[2].toLowerCase();
+
+    const multipliers = {
+        s: 1000,
+        m: 60 * 1000,
+        h: 60 * 60 * 1000,
+        d: 24 * 60 * 60 * 1000,
+        w: 7 * 24 * 60 * 60 * 1000,
+        mos: 30 * 24 * 60 * 60 * 1000,
+        y: 365 * 24 * 60 * 60 * 1000
+    };
+
+    return String(now - (value * multipliers[unit]));
 }
 
 class DefaultExtension extends MProvider {
@@ -182,7 +194,7 @@ class DefaultExtension extends MProvider {
         query += `&days=${days}`;
         query += `&limit=${this.limit}`;
         console.log(query);
-        var resp = await this.client.get(`${this.source.apiUrl}/v2/top${query}`, {})
+        var resp = await this.client.get(`${this.source.apiUrl}/v1/manga/top${query}`, {})
         return JSON.parse(resp.body);
     }
 
@@ -190,20 +202,20 @@ class DefaultExtension extends MProvider {
         console.log(comic);
         return {
             name: comic.title,
-            imageUrl: comic.poster.large,
-            link: `${this.source.baseUrl}/title/${comic.hash_id}`,
+            imageUrl: comic.poster.large ?? comic.poster.medium,
+            link: `${this.source.baseUrl}/title/${comic.hid}`,
             description: comic.synopsis,
             status: StatusMap[comic.status] ?? 5,
-            genre: comic?.genre?.map((g)=>g?.title)?.filter((g)=>g != null),
-            author: comic?.author?.map((a)=>a?.title)?.filter((a)=>a != null).join(" & "),
-            artist: comic?.artist?.map((a)=>a?.title)?.filter((a)=>a != null).join(" & "),
+            genre: comic?.genres?.map((g)=>g?.title)?.filter((g)=>g != null),
+            author: comic?.authors?.map((a)=>a?.title)?.filter((a)=>a != null).join(" & "),
+            artist: comic?.artists?.map((a)=>a?.title)?.filter((a)=>a != null).join(" & "),
         };
     }
 
     async getPopular(page) {
         const res = await this.getAPI("trending", 1, []);
         return {
-            list: res.result.items.map(c => this.comicData(c)),
+            list: res.result.map(c => this.comicData(c)),
             hasNextPage: false
         };
     }
@@ -216,32 +228,31 @@ class DefaultExtension extends MProvider {
         return {}
     }
     async getLatestUpdates(page) {
-        var res = await this.client.get(`${this.source.apiUrl}/v2/manga?scope=hot&limit=${this.limit}&order[chapter_updated_at]=desc&page=${page}`)
+        var res = await this.client.get(`${this.source.apiUrl}/v1/manga?scope=hot&limit=${this.limit}&order[chapter_updated_at]=desc&page=${page}`)
         var res = JSON.parse(res.body);
         return {
             list: res.result.items.map(c => this.comicData(c)),
-            hasNextPage: page != res.result.pagination.last_page
+            hasNextPage: page != res.result.meta.lastPage
         }
     }
     async search(query, page, filters) {
-        // https://comix.to/api/v2/manga?order[relevance]=desc&keyword=shangri&statuses[]=releasing&statuses[]=finished&statuses[]=on_hiatus&statuses[]=discontinued&statuses[]=not_yet_released&genres[]=6&genres[]=87264&genres[]=7&genres[]=8&genres[]=9&genres[]=10&genres[]=11&genres[]=87265&genres[]=12&genres[]=13&genres[]=87266&genres[]=14&genres[]=15&genres[]=16&genres[]=17&genres[]=87267&genres[]=18&genres[]=19&genres[]=20&genres[]=21&genres[]=22&genres[]=23&genres[]=24&genres[]=25&genres[]=87268&genres[]=26&genres[]=27&genres[]=28&genres[]=29&genres[]=30&genres[]=31&genres[]=32&genres[]=33&genres[]=34&genres[]=35&genres[]=36&genres[]=37&genres[]=38&genres[]=39&genres[]=40&genres[]=41&genres[]=42&genres[]=43&genres[]=44&genres[]=45&genres[]=46&genres[]=47&genres[]=48&genres[]=49&genres[]=50&genres[]=51&genres[]=52&genres[]=53&genres[]=54&genres[]=55&genres[]=56&genres[]=57&genres[]=58&genres[]=59&genres[]=60&genres[]=61&genres[]=62&genres[]=63&genres[]=64&genres[]=65&genres[]=66&genres[]=67&genres[]=93164&genres[]=93167&genres[]=93165&genres[]=93166&genres[]=93168&genres[]=93172&genres[]=93170&genres[]=93169&genres[]=93171&genres_mode=or&demographics[]=3&demographics[]=4&demographics[]=1&demographics[]=2&authors[]=81339&artists[]=81340&release_year[from]=2026&release_year[to]=1990&limit=28
-        var res = await this.client.get(`${this.source.apiUrl}/v2/manga?keyword=${query}&limit=${this.limit}&page=${page}&order[relevance]=desc`) // just use order[relevance]=desc for now
+        var res = await this.client.get(`${this.source.apiUrl}/v1/manga?keyword=${query}&limit=${this.limit}&page=${page}&order[relevance]=desc`) // just use order[relevance]=desc for now
         var res = JSON.parse(res.body);
         return {
             list: res.result.items.map(c => this.comicData(c)),
-            hasNextPage: page != res.result.pagination.last_page
+            hasNextPage: page != res.result.meta.lastPage
         }
     }
     async getChapters(url, comic) {
         const id = url.split("/").pop();
 
         const key = this.keyGenerator.generate(`/manga/${id}/chapters`);
-        const firstResp = await this.client.get(`${this.source.apiUrl}/v2/manga/${id}/chapters?limit=${this.limit}&order[number]=desc&time=1&_=${key}`);
+        const firstResp = await this.client.get(`${this.source.apiUrl}/v1/manga/${id}/chapters?limit=${this.limit}&order[number]=desc&_=${key}&page=1`);
         const firstJson = JSON.parse(firstResp.body);
-        const last_page = firstJson.result.pagination.last_page;
+        const last_page = firstJson.result.meta.lastPage;
         const pageRequests = [firstResp];
         for (let page = 2; page <= last_page; page++) {
-            pageRequests.push(this.client.get(`${this.source.apiUrl}/v2/manga/${id}/chapters?limit=${this.limit}&order[number]=desc&page=${page}&time=1&_=${key}`));
+            pageRequests.push(this.client.get(`${this.source.apiUrl}/v1/manga/${id}/chapters?limit=${this.limit}&order[number]=desc&page=${page}&_=${key}`));
         }
 
         const chapters = [];
@@ -250,11 +261,12 @@ class DefaultExtension extends MProvider {
         for (const r of results) {
             const j = JSON.parse(r.body);
             for (const c of j.result.items) {
+                console.log(parseRelativeDate(c.createdAtFormatted));
                 chapters.push({
                     name: c.name && c.name.length ? c.name : `Chapter ${c.number}`,
-                    url: `${url}/${c.chapter_id}`,
-                    dateUpload: String(new Date(c.updated_at * 1000).getTime()),
-                    scanlator: c.scanlation_group?.name ?? "Unknown"
+                    url: `${url}/${c.id}`,
+                    dateUpload: parseRelativeDate(c.createdAtFormatted),
+                    scanlator: c.isOfficial ? "Official" : c.group?.name ?? "Unknown"
                 })
             }
         }
@@ -263,7 +275,7 @@ class DefaultExtension extends MProvider {
     }
     async getDetail(link) {
         var [id] = link.split("/").slice(-1);
-        var comic = await this.client.get(`${this.source.apiUrl}/v2/manga/${id}?includes[]=author&includes[]=artist&includes[]=genre&includes[]=theme&includes[]=demographic`);
+        var comic = await this.client.get(`${this.source.apiUrl}/v1/manga/${id}?includes[]=author&includes[]=artist&includes[]=genre&includes[]=theme&includes[]=demographic`);
         comic = JSON.parse(comic.body);
         comic = comic["result"];
         return {
@@ -272,59 +284,16 @@ class DefaultExtension extends MProvider {
             ...this.comicData(comic)
         };
     }
-    decodeFlight(entry) {
-        if (!Array.isArray(entry)) return null;
-        const payload = entry[1];
-        if (typeof payload !== "string" || !payload.startsWith("d:")) return null;
-        return JSON.parse(payload.slice(2));
-    }
-    async getChapterImages(url) {
-        var res = await this.client.get(url);
-        var doc = new Document(res.body);
-
-        const scripts = doc.select("script");
-        const flightEntries = [];
-
-        for (const s of scripts) {
-            const txt = s.text;
-            if (!txt || !txt.includes("__next_f.push")) continue;
-
-            const matches = txt.match(/__next_f\.push\((\[[\s\S]*?\])\)/g);
-            if (!matches) continue;
-
-            for (const m of matches) {
-                const arr = eval(m.replace("__next_f.push", ""));
-                flightEntries.push(arr);
-            }
-        }
-
-        var chapters = [];
-        for (const entry of flightEntries) {
-            const decoded = this.decodeFlight(entry);
-            if (!decoded) continue;
-
-            const data = decoded[1][3];
-            if (!data?.chapter) continue;
-
-            const c = data.chapter;
-            chapters.push({
-                number: c.number,
-                link: c._link,
-                createdAt: c.created_at,
-                images: c.images,
-            })
-        }
-        return chapters;
-    }
     async getPageList(url) {
-        var id = url.split("/").slice(1)[0].split("-")[0];
-
-        for (const chapter of await this.getChapterImages(url)) {
-            if (chapter.link.includes(id)) {
-                return chapter.images.map((i) => i.url)
-            }
+       var chapter_id = url.split("/")[5];
+       const key = this.keyGenerator.generate(`/chapters/${chapter_id}`)
+        const req = await this.client.get(`${this.source.apiUrl}/v1/chapters/${chapter_id}?_=${key}`);
+        const js = JSON.parse(req.body);
+        var images = [];
+        for (const page of js.result.pages) {
+          images.push(page.url);
         }
-        return []
+        return images;
     }
     getFilterList() {
         return []
