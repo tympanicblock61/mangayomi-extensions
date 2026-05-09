@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.1.2",
+    "version": "0.1.3",
     "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
@@ -21,48 +21,48 @@ const StatusMap = {
     "not_yet_released": 4,
     "unknown": 5
 }
+
 class KeyGenerator {
     constructor() {
         this.BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
         this.KEYS = [
-            '13YDu67uDgFczo3DnuTIURqas4lfMEPADY6Jaeqky+w=',
-            'yEy7wBfBc+gsYPiQL/4Dfd0pIBZFzMwrtlRQGwMXy3Q=',
-            'yrP+EVA1Dw==',
-            'vZ23RT7pbSlxwiygkHd1dhToIku8SNHPC6V36L4cnwM=',
-            'QX0sLahOByWLcWGnv6l98vQudWqdRI3DOXBdit9bxCE=',
-            'WJwgqCmf',
-            'BkWI8feqSlDZKMq6awfzWlUypl88nz65KVRmpH0RWIc=',
-            'v7EIpiQQjd2BGuJzMbBA0qPWDSS+wTJRQ7uGzZ6rJKs=',
-            '1SUReYlCRA==',
-            'RougjiFHkSKs20DZ6BWXiWwQUGZXtseZIyQWKz5eG34=',
-            'LL97cwoDoG5cw8QmhI+KSWzfW+8VehIh+inTxnVJ2ps=',
-            '52iDqjzlqe8=',
-            'U9LRYFL2zXU4TtALIYDj+lCATRk/EJtH7/y7qYYNlh8=',
-            'e/GtffFDTvnw7LBRixAD+iGixjqTq9kIZ1m0Hj+s6fY=',
-            'xb2XwHNB',
+            'JxTcdyiA5GZxnbrmthXBQfU2IMTKcY1+3nNhbq98Sgo=',
+            '3PordjODbhqla382Cxapmo/1JiABJQcjiJj1+48gTJ4=',
+            'OaKvnI5ARA==',
+            'MHNBHYWA7lvy867fXgvGcJwWDk79KqUJUVFsh3RwnnI=',
+            '8i0Cru/VJBSVB2Y1GcMDVpzx2WepOcfnWdd81yxICl4=',
+            'Fyskubz8VvA=',
+            'B46L1x+UeWP+19cRpQ+OZvdLAK9EHID8g3mSgn57tew=',
+            'DTSTmUt6LpDUw9r1lSQqyb3YlFTzruT8tk8wUGkwehQ=',
+            'vY/meeI=',
+            '7xWfIF5THL5LAnRgAARg+4mjWHPU9n3PQwvzbaMNi+Q=',
+            'bewtiTuV+HJk56xxkf2iCljLgruCpBmN9BgE8i6gc9M=',
+            '/Xcb2zAu8AU=',
+            'WgeCQ3T8R51uTwVSiVa7Zy0dN6JOg6Z5JleMS+HV8Aw=',
+            'yXayUVFrrcW56jQCEfZzuCidjpnWKjTDUNT7XeX9i7k=',
+            'tSLco2w=',
         ].map(b64 => this.base64Decode(b64));
 
-        const ror = (x, n) => ((x >> n) | (x << (8 - n))) & 0xFF;
-        const rol = (x, n) => ((x << n) | (x >> (8 - n))) & 0xFF;
-        const B = e => (e - 12 + 256) % 256;
-        const C = e => (e + 115) % 256;
-        const D = e => rol(e, 4);
-        const F = e => (e - 188 + 256) % 256;
-        const G = e => rol(e, 2);
-        const H = e => (e - 42 + 256) % 256;
-        const K = e => (e - 241 + 256) % 256;
-        const L = e => ror(e, 1);
-        const M = e => (e ^ 177) & 0xFF;
-        const S = e => (e + 143) % 256;
-        const U = e => (e - 20 + 256) % 256;
-        const Y = e => ror(e, 1);
+        const SR7L1 = e => ((e >> 7) | (e << 1)) & 0xFF;
+        const SL1R7 = e => ((e << 1) | (e >> 7)) & 0xFF;
+        const SR2L6 = e => ((e >> 2) | (e << 6)) & 0xFF;
+        const SL4R4 = e => ((e << 4) | (e >> 4)) & 0xFF;
+        const SR4L4 = e => ((e >> 4) | (e << 4)) & 0xFF;
+        const X37   = e => (e ^ 37)  & 0xFF;
+        const X81   = e => (e ^ 81)  & 0xFF;
+        const X147  = e => (e ^ 147) & 0xFF;
+        const X180  = e => (e ^ 180) & 0xFF;
+        const X218  = e => (e ^ 218) & 0xFF;
+        const P34   = e => (e + 34)  & 0xFF;
+        const P159  = e => (e + 159) & 0xFF;
 
         this.ROUNDS = [
-            { map: [C,B,Y,D,H,S,H,K,L,C], pref: 7 },
-            { map: [C,B,D,H,S,K,D,U,C,S], pref: 6 },
-            { map: [C,F,S,G,Y,M,D,K,S,B], pref: 7 },
-            { map: [B,M,L,S,U,S,U,L,Y,M], pref: 8 },
-            { map: [U,S,C,M,B,M,F,S,D,G], pref: 6 },
+            { map: [SR7L1, X37,   X81,   X147,  SR2L6, SR4L4, X218,  P159,  SR4L4, X180], pref: 7 },
+            { map: [X180,  SL1R7, X147,  SR7L1, SR2L6, SR4L4, P159,  P34,   P159,  X180], pref: 8 },
+            { map: [X81,   SR4L4, SL4R4, X37,   P159,  SL1R7, X180,  P34,   SR2L6, SL4R4], pref: 5 },
+            { map: [X218,  SL1R7, SR7L1, P159,  SL1R7, X180,  X147,  X218,  X180,  X37],  pref: 8 },
+            { map: [SL4R4, X147,  P34,   X147,  X218,  SL1R7, X180,  SL1R7, SR2L6, X218], pref: 5 },
         ];
     }
 
@@ -119,19 +119,29 @@ class KeyGenerator {
         return out;
     }
 
-    round(data, ki) {
-        const k = this.KEYS[ki], mk = this.KEYS[ki + 1], pk = this.KEYS[ki + 2];
-        const cfg = this.ROUNDS[(ki / 3) | 0];
-        const enc = this.rc4(k, data);
+    getMutKey(mk, idx) {
+        if (mk.length === 0) return 0;
+        if ((idx % 32) < mk.length) return mk[idx % mk.length];
+        return 0;
+    }
+
+    mutate(data, mk, pk, cfg) {
         const out = [];
-        for (let i = 0; i < enc.length; i++) {
+        for (let i = 0; i < data.length; i++) {
             if (i < cfg.pref && i < pk.length) out.push(pk[i]);
-            const mkv = mk.length && (i % 32) < mk.length ? mk[i % mk.length] : 0;
-            let v = (enc[i] ^ mkv) & 0xFF;
-            if (cfg.map[i % 10]) v = cfg.map[i % 10](v);
+            let v = (data[i] ^ this.getMutKey(mk, i)) & 0xFF;
+            v = cfg.map[i % 10](v);
             out.push(v);
         }
         return new Uint8Array(out);
+    }
+
+    round(data, ki) {
+        const k   = this.KEYS[ki];
+        const mk  = this.KEYS[ki + 1];
+        const pk  = this.KEYS[ki + 2];
+        const cfg = this.ROUNDS[(ki / 3) | 0];
+        return this.rc4(k, this.mutate(data, mk, pk, cfg));
     }
 
     encodeURLElement(path) {
@@ -140,6 +150,7 @@ class KeyGenerator {
         for (let i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i);
         return bytes;
     }
+
     generate(path) {
         let bytes = this.encodeURLElement(path);
         bytes = this.round(bytes, 0);
