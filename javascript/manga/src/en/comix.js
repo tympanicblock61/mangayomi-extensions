@@ -3,12 +3,12 @@ const mangayomiSources = [{
     "lang": "en",
     "baseUrl": "https://comix.to",
     "apiUrl": "https://comix.to/api",
-    "iconUrl": "https://www.google.com/s2/favicons?sz=512&domain=https://comix.to",
+    "iconUrl": "https://www.google.com/s2/favicons?sz=256&domain=https://comix.to",
     "typeSource": "single",
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.1.3",
+    "version": "0.1.4",
     "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
