@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.1.0",
+    "version": "0.1.1",
     "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
@@ -213,7 +213,8 @@ class DefaultExtension extends MProvider {
     }
 
     async getPopular(page) {
-        const res = await this.getAPI("trending", 1, []);
+        const days = [1,7,30,90,180,365];
+        const res = await this.getAPI("trending", days[page > 6 ? 6 : page-1], []);
         return {
             list: res.result.map(c => this.comicData(c)),
             hasNextPage: false
