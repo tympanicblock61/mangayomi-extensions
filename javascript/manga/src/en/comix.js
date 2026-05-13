@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.1.4",
+    "version": "0.1.5",
     "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
@@ -22,166 +22,26 @@ const StatusMap = {
     "unknown": 5
 }
 
-class KeyGenerator {
-    constructor() {
-        this.BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function parseRelativeTime(str) {
+  const units = {
+    s:   1000,
+    m:   60000,
+    h:   3600000,
+    d:   86400000,
+    w:   604800000,
+    mo:  2592000000,
+    mos: 2592000000,
+    y:   31536000000,
+  };
 
-        this.KEYS = [
-            'JxTcdyiA5GZxnbrmthXBQfU2IMTKcY1+3nNhbq98Sgo=',
-            '3PordjODbhqla382Cxapmo/1JiABJQcjiJj1+48gTJ4=',
-            'OaKvnI5ARA==',
-            'MHNBHYWA7lvy867fXgvGcJwWDk79KqUJUVFsh3RwnnI=',
-            '8i0Cru/VJBSVB2Y1GcMDVpzx2WepOcfnWdd81yxICl4=',
-            'Fyskubz8VvA=',
-            'B46L1x+UeWP+19cRpQ+OZvdLAK9EHID8g3mSgn57tew=',
-            'DTSTmUt6LpDUw9r1lSQqyb3YlFTzruT8tk8wUGkwehQ=',
-            'vY/meeI=',
-            '7xWfIF5THL5LAnRgAARg+4mjWHPU9n3PQwvzbaMNi+Q=',
-            'bewtiTuV+HJk56xxkf2iCljLgruCpBmN9BgE8i6gc9M=',
-            '/Xcb2zAu8AU=',
-            'WgeCQ3T8R51uTwVSiVa7Zy0dN6JOg6Z5JleMS+HV8Aw=',
-            'yXayUVFrrcW56jQCEfZzuCidjpnWKjTDUNT7XeX9i7k=',
-            'tSLco2w=',
-        ].map(b64 => this.base64Decode(b64));
+  const match = str.match(/^(\d+)(mos|mo|[smhdwy])$/);
+  if (!match) throw new Error("Unknown format: " + str);
 
-        const SR7L1 = e => ((e >> 7) | (e << 1)) & 0xFF;
-        const SL1R7 = e => ((e << 1) | (e >> 7)) & 0xFF;
-        const SR2L6 = e => ((e >> 2) | (e << 6)) & 0xFF;
-        const SL4R4 = e => ((e << 4) | (e >> 4)) & 0xFF;
-        const SR4L4 = e => ((e >> 4) | (e << 4)) & 0xFF;
-        const X37   = e => (e ^ 37)  & 0xFF;
-        const X81   = e => (e ^ 81)  & 0xFF;
-        const X147  = e => (e ^ 147) & 0xFF;
-        const X180  = e => (e ^ 180) & 0xFF;
-        const X218  = e => (e ^ 218) & 0xFF;
-        const P34   = e => (e + 34)  & 0xFF;
-        const P159  = e => (e + 159) & 0xFF;
+  const amount = parseInt(match[1]);
+  const unit   = match[2];
+  if (!(unit in units)) throw new Error("Unknown unit: " + unit);
 
-        this.ROUNDS = [
-            { map: [SR7L1, X37,   X81,   X147,  SR2L6, SR4L4, X218,  P159,  SR4L4, X180], pref: 7 },
-            { map: [X180,  SL1R7, X147,  SR7L1, SR2L6, SR4L4, P159,  P34,   P159,  X180], pref: 8 },
-            { map: [X81,   SR4L4, SL4R4, X37,   P159,  SL1R7, X180,  P34,   SR2L6, SL4R4], pref: 5 },
-            { map: [X218,  SL1R7, SR7L1, P159,  SL1R7, X180,  X147,  X218,  X180,  X37],  pref: 8 },
-            { map: [SL4R4, X147,  P34,   X147,  X218,  SL1R7, X180,  SL1R7, SR2L6, X218], pref: 5 },
-        ];
-    }
-
-    base64Decode(b64) {
-        const chars = this.BASE64_CHARS;
-        const lookup = new Uint8Array(128);
-        for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
-        b64 = b64.replace(/=+$/, '');
-        const len = b64.length;
-        const bytes = new Uint8Array((len * 3 / 4) | 0);
-        let i = 0, j = 0;
-        while (i < len) {
-            const a = lookup[b64.charCodeAt(i++)];
-            const b = lookup[b64.charCodeAt(i++)];
-            const c = i < len ? lookup[b64.charCodeAt(i++)] : 0;
-            const d = i < len ? lookup[b64.charCodeAt(i++)] : 0;
-            bytes[j++] = (a << 2) | (b >> 4);
-            if (j < bytes.length) bytes[j++] = ((b & 0xF) << 4) | (c >> 2);
-            if (j < bytes.length) bytes[j++] = ((c & 0x3) << 6) | d;
-        }
-        return bytes;
-    }
-
-    base64Encode(bytes) {
-        const chars = this.BASE64_CHARS;
-        let out = '', i = 0;
-        while (i < bytes.length) {
-            const a = bytes[i++];
-            const b = i < bytes.length ? bytes[i++] : 0;
-            const c = i < bytes.length ? bytes[i++] : 0;
-            out += chars[a >> 2];
-            out += chars[((a & 3) << 4) | (b >> 4)];
-            out += chars[((b & 15) << 2) | (c >> 6)];
-            out += chars[c & 63];
-        }
-        const pad = bytes.length % 3;
-        return (pad ? out.slice(0, pad - 3) : out) + '==='.slice(pad || 3);
-    }
-
-    rc4(key, data) {
-        const s = new Uint8Array(256);
-        for (let i = 0; i < 256; i++) s[i] = i;
-        for (let i = 0, j = 0; i < 256; i++) {
-            j = (j + s[i] + key[i % key.length]) % 256;
-            const t = s[i]; s[i] = s[j]; s[j] = t;
-        }
-        const out = new Uint8Array(data.length);
-        for (let k = 0, i = 0, j = 0; k < data.length; k++) {
-            i = (i + 1) % 256;
-            j = (j + s[i]) % 256;
-            const t = s[i]; s[i] = s[j]; s[j] = t;
-            out[k] = data[k] ^ s[(s[i] + s[j]) % 256];
-        }
-        return out;
-    }
-
-    getMutKey(mk, idx) {
-        if (mk.length === 0) return 0;
-        if ((idx % 32) < mk.length) return mk[idx % mk.length];
-        return 0;
-    }
-
-    mutate(data, mk, pk, cfg) {
-        const out = [];
-        for (let i = 0; i < data.length; i++) {
-            if (i < cfg.pref && i < pk.length) out.push(pk[i]);
-            let v = (data[i] ^ this.getMutKey(mk, i)) & 0xFF;
-            v = cfg.map[i % 10](v);
-            out.push(v);
-        }
-        return new Uint8Array(out);
-    }
-
-    round(data, ki) {
-        const k   = this.KEYS[ki];
-        const mk  = this.KEYS[ki + 1];
-        const pk  = this.KEYS[ki + 2];
-        const cfg = this.ROUNDS[(ki / 3) | 0];
-        return this.rc4(k, this.mutate(data, mk, pk, cfg));
-    }
-
-    encodeURLElement(path) {
-        const str = encodeURIComponent(path);
-        const bytes = new Uint8Array(str.length);
-        for (let i = 0; i < str.length; i++) bytes[i] = str.charCodeAt(i);
-        return bytes;
-    }
-
-    generate(path) {
-        let bytes = this.encodeURLElement(path);
-        bytes = this.round(bytes, 0);
-        bytes = this.round(bytes, 3);
-        bytes = this.round(bytes, 6);
-        bytes = this.round(bytes, 9);
-        bytes = this.round(bytes, 12);
-        return this.base64Encode(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    }
-}
-
-function parseRelativeDate(str) {
-    const now = Date.now();
-
-    const match = str.match(/^(\d+)\s*(s|m|h|d|w|mos|y)$/i);
-    if (!match) return null;
-    console.log(match);
-    const value = parseInt(match[1], 10);
-    const unit = match[2].toLowerCase();
-
-    const multipliers = {
-        s: 1000,
-        m: 60 * 1000,
-        h: 60 * 60 * 1000,
-        d: 24 * 60 * 60 * 1000,
-        w: 7 * 24 * 60 * 60 * 1000,
-        mos: 30 * 24 * 60 * 60 * 1000,
-        y: 365 * 24 * 60 * 60 * 1000
-    };
-
-    return String(now - (value * multipliers[unit]));
+  return String(Date.now() - (amount * units[unit]));
 }
 
 class DefaultExtension extends MProvider {
@@ -190,7 +50,143 @@ class DefaultExtension extends MProvider {
         this.client = new Client();
         this.prefs = new SharedPreferences();
         this.limit = 100;
-        this.keyGenerator = new KeyGenerator();
+        this.encoder = null;
+        this.decoder = null;
+    }
+    
+    find(obj) {
+        for (const k in obj) {
+            const v = obj[k];
+            if (
+                v &&
+                typeof v === "object" &&
+                typeof v.D === "function" &&
+                typeof v.R === "function"
+            ) {
+                return v;
+            }
+        }
+        return null;
+    }
+    
+    async getEncoderDecoder() {
+        if (this.encoder == null && this.decoder == null) {
+            var res = await this.client.get(`${this.source.baseUrl}/assets/build/35595e3de3c99889c1aa70/dist/secure-teup0d-D6PE046x.js`);
+
+            function stripModule(src) {
+                return src
+                .replace(/export\s+default/g, "const __default_export =")
+                .replace(/export\s+function/g, "function")
+                .replace(/export\s+const/g, "const")
+                .replace(/export\s*\{/g, "// export {");
+            }
+
+            const src = stripModule(res.body);
+
+            var B64CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+            var B64TABLE = (function() {
+                var t = {};
+                for (var i = 0; i < B64CHARS.length; i++) t[B64CHARS[i]] = i;
+                return t;
+            })();
+            function _atob(s) {
+                s = String(s).replace(/[\t\n\f\r ]/g, "");
+                var rem = s.length % 4;
+                if (rem === 1) s += "A==";
+                else if (rem === 2) s += "==";
+                else if (rem === 3) s += "=";
+                var o = "";
+                for (var i = 0; i < s.length; i += 4) {
+                    var a = B64TABLE[s[i]]   | 0;
+                    var b = B64TABLE[s[i+1]] | 0;
+                    var c = s[i+2] === "=" ? 0 : (B64TABLE[s[i+2]] | 0);
+                    var d = s[i+3] === "=" ? 0 : (B64TABLE[s[i+3]] | 0);
+                    var n = (a << 18) | (b << 12) | (c << 6) | d;
+                    o += String.fromCharCode((n >> 16) & 255);
+                    if (s[i+2] !== "=") o += String.fromCharCode((n >> 8) & 255);
+                    if (s[i+3] !== "=") o += String.fromCharCode(n & 255);
+                }
+                return o;
+            }
+
+            function _btoa(s) {
+                s = String(s);
+                for (var i = 0; i < s.length; i++)
+                    if (s.charCodeAt(i) > 255) throw new Error("btoa: not latin1");
+                var o = "";
+                for (var i = 0; i < s.length; i += 3) {
+                    var a = s.charCodeAt(i);
+                    var b = s.charCodeAt(i+1);
+                    var c = s.charCodeAt(i+2);
+                    o += B64CHARS[a >> 2];
+                    o += B64CHARS[((a & 3) << 4) | (isNaN(b) ? 0 : b >> 4)];
+                    o += isNaN(b) ? "=" : B64CHARS[((b & 15) << 2) | (isNaN(c) ? 0 : c >> 6)];
+                    o += isNaN(c) ? "=" : B64CHARS[c & 63];
+                }
+                return o;
+            }
+
+            var id = 1;
+            var timers = new Map();
+            var fakeEl = {
+                appendChild:      function(){},
+                setAttribute:     function(){},
+                addEventListener: function(){},
+                removeChild:      function(){},
+            };
+
+            const querySelector = function querySelector() {
+                return null;
+            };
+            Object.defineProperty(querySelector, "toString", {
+                value: () =>
+                    "function querySelector() { [native code] }"
+            });
+            Object.defineProperty(querySelector, "name", {
+                value: "querySelector"
+            });
+
+            var fakeGlobal = {
+                setTimeout:   function setTimeout(fn, ms)  { var i=id++; timers.set(i,{fn:fn,ms:ms}); return i; },
+                setInterval:  function setInterval(fn, ms) { var i=id++; timers.set(i,{fn:fn,ms:ms,interval:true}); return i; },
+                clearTimeout:  function clearTimeout(i)    { timers.delete(i); },
+                clearInterval: function clearInterval(i)   { timers.delete(i); },
+                navigator: {
+                    appCodeName: "Mozilla",
+                    userAgent:   "Mozilla/5.0",
+                    platform:    "Win32",
+                },
+                location: { host: "comix.to", href: "https://comix.to" },
+                document: {
+                    createElement:    function() { return fakeEl; },
+                    addEventListener: function() {},
+                    querySelector:    querySelector,
+                    body:             fakeEl,
+                    documentElement:  fakeEl,
+                },
+                atob:           function atob(s)  { return _atob(s); },
+                btoa:           function btoa(s)  { return _btoa(s); },
+                queueMicrotask: function queueMicrotask(fn) { Promise.resolve().then(fn); },
+                crypto:      { getRandomValues: function(a) { for(var i=0;i<a.length;i++) a[i]=(Math.random()*256)|0; return a; } },
+                performance: { now: function now() { return Date.now(); } },
+                encodeURIComponent,decodeURIComponent,isNaN,isFinite,parseInt,parseFloat,Math,Object,Array,String,Date,Promise,JSON,RegExp,Error,TypeError,RangeError,Map,Set,WeakMap,WeakSet,Symbol,Proxy,Reflect,Uint8Array,Int32Array,Float64Array,ArrayBuffer,
+            }
+            fakeGlobal.window = fakeGlobal;
+            fakeGlobal.self = fakeGlobal;
+            fakeGlobal.globalThis = fakeGlobal;
+            var paramNames  = Object.keys(fakeGlobal);
+            var paramValues = Object.values(fakeGlobal);
+
+            var fn = new Function(
+                paramNames.join(","),
+                src + "\nreturn globalThis;"
+            );
+
+            var capturedGlobal = fn.apply(null, paramValues);
+            var found = this.find(capturedGlobal);
+            this.encoder = found.D;
+            this.decoder = found.R;
+        }
     }
     
     async getAPI(type, days, exclude_genres) {
@@ -210,7 +206,6 @@ class DefaultExtension extends MProvider {
     }
 
     comicData(comic) {
-        console.log(comic);
         return {
             name: comic.title,
             imageUrl: comic.poster.large ?? comic.poster.medium,
@@ -257,8 +252,7 @@ class DefaultExtension extends MProvider {
     }
     async getChapters(url, comic) {
         const id = url.split("/").pop();
-
-        const key = this.keyGenerator.generate(`/manga/${id}/chapters`);
+        const key = this.encoder(`/manga/${id}/chapters`);
         const firstResp = await this.client.get(`${this.source.apiUrl}/v1/manga/${id}/chapters?limit=${this.limit}&order[number]=desc&_=${key}&page=1`);
         const firstJson = JSON.parse(firstResp.body);
         const last_page = firstJson.result.meta.lastPage;
@@ -273,11 +267,11 @@ class DefaultExtension extends MProvider {
         for (const r of results) {
             const j = JSON.parse(r.body);
             for (const c of j.result.items) {
-                console.log(parseRelativeDate(c.createdAtFormatted));
+                console.log(c.createdAtFormatted);
                 chapters.push({
                     name: c.name && c.name.length ? c.name : `Chapter ${c.number}`,
                     url: `${url}/${c.id}`,
-                    dateUpload: parseRelativeDate(c.createdAtFormatted),
+                    dateUpload: parseRelativeTime(c.createdAtFormatted),
                     scanlator: c.isOfficial ? "Official" : c.group?.name ?? "Unknown"
                 })
             }
@@ -286,6 +280,7 @@ class DefaultExtension extends MProvider {
         return chapters;
     }
     async getDetail(link) {
+        await this.getEncoderDecoder();
         var [id] = link.split("/").slice(-1);
         var comic = await this.client.get(`${this.source.apiUrl}/v1/manga/${id}?includes[]=author&includes[]=artist&includes[]=genre&includes[]=theme&includes[]=demographic`);
         comic = JSON.parse(comic.body);
@@ -297,13 +292,15 @@ class DefaultExtension extends MProvider {
         };
     }
     async getPageList(url) {
-       var chapter_id = url.split("/")[5];
-       const key = this.keyGenerator.generate(`/chapters/${chapter_id}`)
+        await this.getEncoderDecoder();
+        var chapter_id = url.split("/")[5];
+        const key = this.encoder(`/chapters/${chapter_id}`)
         const req = await this.client.get(`${this.source.apiUrl}/v1/chapters/${chapter_id}?_=${key}`);
         const js = JSON.parse(req.body);
+        console.log(js)
         var images = [];
-        for (const page of js.result.pages) {
-          images.push(page.url);
+        for (const page of js.result.pages.items) {
+            images.push(js.result.pages.baseUrl+page.url);
         }
         return images;
     }
