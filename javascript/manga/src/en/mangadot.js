@@ -312,7 +312,7 @@ class DefaultExtension extends MProvider {
                 "editTextPreference": {
                     "title": "Set Cloudflare proxy url",
                     "summary": "Cloudflare proxy url",
-                    "value": "http://localhost:8080/",
+                    "value": "http://localhost:8080",
                     "dialogTitle": "Custom Proxy URL",
                     "dialogMessage": "set the proxy url to use",
                 }
