@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.0.1",
+    "version": "0.0.2",
     "pkgPath": "manga/src/en/mangadot.js",
     "notes": ""
 }];
@@ -208,7 +208,7 @@ class DefaultExtension extends MProvider {
     mangaData(manga) {
         return {
             name: fixMojibake(manga.title),
-            imageUrl: this.source.baseUrl+manga.photo,
+            imageUrl: this.prefs.get("proxy-use") ? `${this.prefs.get("proxy-url")}/image?url=${this.source.baseUrl+manga.photo}` : this.source.baseUrl+manga.photo,
             link: `${this.source.baseUrl}/manga/${manga.id}`,
             description: fixMojibake(manga.description),
             status: manga.hiatus != "No" ? StatusMap["on_hiatus"] : StatusMap[manga.status],
@@ -278,10 +278,10 @@ class DefaultExtension extends MProvider {
         let res;
         if (url.includes("?source=user")) {
           let id = url.split("?")[0].split("/")[4];
-          res = await this.client.get(`${this.source.apiUrl}/uploads/${id}/images`);   
+          res = await this.client.get(`${this.source.baseUrl}/api/uploads/${id}/images`);   
         } else {
           let id = url.split("/")[4];
-          res = await this.client.get(`${this.source.apiUrl}/chapters/${id}/images`);        
+          res = await this.client.get(`${this.source.baseUrl}/api/chapters/${id}/images`);        
         }
         let data = JSON.parse(res.body);
         console.log(data);
@@ -289,7 +289,7 @@ class DefaultExtension extends MProvider {
         for (const image of data.images) {
           console.log(res.headers);
           images.push({
-            url: `${this.source.baseUrl}${image.url}`,
+            url: this.prefs.get("proxy-use") ? `${this.prefs.get("proxy-url")}/image?url=${this.source.baseUrl}${image.url}` : `${this.source.baseUrl}${image.url}`,
             headers: res.headers
             });
         }
