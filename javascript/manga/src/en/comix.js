@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.1.5",
+    "version": "0.1.6",
     "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
@@ -34,7 +34,7 @@ function parseRelativeTime(str) {
     y:   31536000000,
   };
 
-  const match = str.match(/^(\d+)(mos|mo|[smhdwy])$/);
+  const match = str.match(/^(\d+)\s*(mos|mo|[smhdwy])(?:\s*ago)?$/);
   if (!match) throw new Error("Unknown format: " + str);
 
   const amount = parseInt(match[1]);
