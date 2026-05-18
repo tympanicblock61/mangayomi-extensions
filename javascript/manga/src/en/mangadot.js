@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.0.2",
+    "version": "0.0.3",
     "pkgPath": "manga/src/en/mangadot.js",
     "notes": ""
 }];
@@ -238,7 +238,7 @@ class DefaultExtension extends MProvider {
     }
 
     async search(query, page, filters) {
-        let res = await this.client.get(`${this.source.baseUrl}/search.data?search=h&adult=1&page=${page}&perPage=${this.total}&_routes=pages%2FSearchPage`);
+        let res = await this.client.get(`${this.source.baseUrl}/search.data?search=${query}&adult=1&page=${page}&perPage=${this.total}&_routes=pages%2FSearchPage`);
         let hydrated = hydrate(4, JSON.parse(res.body))
         // 4 is {allGenres,displayMode,filters,page,pagination,query,results}
 
