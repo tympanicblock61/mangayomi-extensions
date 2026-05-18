@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.0.3",
+    "version": "0.0.4",
     "pkgPath": "manga/src/en/mangadot.js",
     "notes": ""
 }];
@@ -225,7 +225,7 @@ class DefaultExtension extends MProvider {
         // 7 is {manga_list, pagination}
         let manga = first_hydro.manga_list;
         if (page > 1) {
-            let res = await this.client.get(`${this.source.baseUrl}view-all/latest-updates.data?adult=1&page=${page}&_routes=pages/ViewAllPage`);
+            let res = await this.client.get(`${this.source.baseUrl}/view-all/latest-updates.data?adult=1&page=${page}&_routes=pages/ViewAllPage`);
             let hydro = hydrate(7, JSON.parse(res.body))
             // 7 is {manga_list, pagination}
             manga = hydro.manga_list;
@@ -253,7 +253,6 @@ class DefaultExtension extends MProvider {
 
         let chapters = []
         for (const c of data) {
-            console.log(c);
             chapters.push({
                 name: c.chapter_title && c.chapter_title.length ? c.chapter_title : `${c.volume_number ? "Volume "+c.volume_number+" " : ""}Chapter ${c.chapter_number}`,
                 url: `${this.source.baseUrl}/chapter/${c.id}${c.group_name && c.group_name.length ? "?source=user" : ""}`,
@@ -284,10 +283,8 @@ class DefaultExtension extends MProvider {
           res = await this.client.get(`${this.source.baseUrl}/api/chapters/${id}/images`);        
         }
         let data = JSON.parse(res.body);
-        console.log(data);
         let images = [];
         for (const image of data.images) {
-          console.log(res.headers);
           images.push({
             url: this.prefs.get("proxy-use") ? `${this.prefs.get("proxy-url")}/image?url=${this.source.baseUrl}${image.url}` : `${this.source.baseUrl}${image.url}`,
             headers: res.headers
