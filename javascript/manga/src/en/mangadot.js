@@ -8,119 +8,61 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.0.4",
+    "hasCloudflare": true,
+    "version": "0.0.5",
     "pkgPath": "manga/src/en/mangadot.js",
     "notes": ""
 }];
 
 function fixMojibake(str) {
-  let out = "";
-  for (let i = 0; i < str.length; i++) {
-    out += String.fromCharCode(str.charCodeAt(i) & 0xFF);
-  }
-  return decodeURIComponent(escape(out));
+    let out = "";
+    for (let i = 0; i < str.length; i++) {
+        out += String.fromCharCode(str.charCodeAt(i) & 0xFF);
+    }
+    return decodeURIComponent(escape(out));
 }
 
 class ProxyClient {
     constructor(prefs) {
-        this.client = new Client({"useDartHttpClient": false, "verifyCertificates": false});
         this.prefs = prefs;
+        this.client = new Client({
+            useDartHttpClient: false,
+            verifyCertificates: false
+        });
     }
 
-    async head(url, headers) {
-        if (this.prefs.get("proxy-use")) {
-            return this.client.post(this.prefs.get("proxy-url"), {
-                    "x-api-key": this.prefs.get("proxy-key"),
-                    "x-impersonate": this.prefs.get("proxy-impersonate")
-                }, {
-                    "url": url,
-                    "method": "HEAD",
-                    "headers": headers
+    req(method, url, headers, body) {
+        if (!this.prefs.get("proxy-use")) {
+            return this.client[method.toLowerCase()](
+                url,
+                headers,
+                body
+            );
+        }
+
+        return this.client.post(
+            this.prefs.get("proxy-url"),
+            {
+                "x-api-key": this.prefs.get("proxy-key"),
+                "x-impersonate": this.prefs.get("proxy-impersonate")
+            },
+            {
+                url,
+                method,
+                headers,
+                ...(body != null && {
+                    body: JSON.stringify(body)
                 })
-        } else {
-                return this.client.head(url, headers);
-        }
+            }
+        );
     }
 
-    async get(url, headers) {
-        if (this.prefs.get("proxy-use")) {
-            return this.client.post(this.prefs.get("proxy-url"), {
-                    "x-api-key": this.prefs.get("proxy-key"),
-                    "x-impersonate": this.prefs.get("proxy-impersonate")
-                }, JSON.stringify({
-                    "url": url,
-                    "method": "GET",
-                    "headers": headers
-                }))
-        } else {
-                return this.client.get(url, headers);
-        }
-    }
-
-    async post(url, headers, body) {
-        if (this.prefs.get("proxy-use")) {
-            return this.client.post(this.prefs.get("proxy-url"), {
-                    "x-api-key": this.prefs.get("proxy-key"),
-                    "x-impersonate": this.prefs.get("proxy-impersonate")
-                }, {
-                    "url": url,
-                    "method": "POST",
-                    "headers": headers,
-                    "body": JSON.stringify(body),
-                })
-        } else {
-                return this.client.post(url, headers, body);
-        }
-    }
-
-    async put(url, headers, body) {
-        if (this.prefs.get("proxy-use")) {
-            return this.client.post(this.prefs.get("proxy-url"), {
-                    "x-api-key": this.prefs.get("proxy-key"),
-                    "x-impersonate": this.prefs.get("proxy-impersonate")
-                }, {
-                    "url": url,
-                    "method": "PUT",
-                    "headers": headers,
-                    "body": SON.stringify(body),
-                })
-        } else {
-                return this.client.put(url, headers, body);
-        }
-    }
-
-    async delete(url, headers, body) {
-        if (this.prefs.get("proxy-use")) {
-            return this.client.post(this.prefs.get("proxy-url"), {
-                    "x-api-key": this.prefs.get("proxy-key"),
-                    "x-impersonate": this.prefs.get("proxy-impersonate")
-                }, {
-                    "url": url,
-                    "method": "DELETE",
-                    "headers": headers,
-                    "body": SON.stringify(body),
-                })
-        } else {
-                return this.client.patch(url, headers, body);
-        }
-    }
-
-
-    async patch(url, headers, body) {
-        if (this.prefs.get("proxy-use")) {
-            return this.client.post(this.prefs.get("proxy-url"), {
-                    "x-api-key": this.prefs.get("proxy-key"),
-                    "x-impersonate": this.prefs.get("proxy-impersonate")
-                }, {
-                    "url": url,
-                    "method": "PATCH",
-                    "headers": headers,
-                    "body": SON.stringify(body),
-                })
-        } else {
-                return this.client.patch(url, headers, body);
-        }
-    }
+    head(u,h){return this.req("HEAD",u,h)}
+    get(u,h){return this.req("GET",u,h)}
+    post(u,h,b){return this.req("POST",u,h,b)}
+    put(u,h,b){return this.req("PUT",u,h,b)}
+    delete(u,h,b){return this.req("DELETE",u,h,b)}
+    patch(u,h,b){return this.req("PATCH",u,h,b)}
 }
 
 function hydrate(rootIndex, table) {
@@ -165,6 +107,26 @@ function hydrate(rootIndex, table) {
   return resolve(rootIndex);
 }
 
+function buildParams(params) {
+  let out = "";
+
+  for (const [key, value] of Object.entries(params)) {
+    const k = encodeURIComponent(key);
+
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        out += (out ? "&" : "") +
+          k + "=" + encodeURIComponent(v);
+      }
+    } else if (value != null) {
+      out += (out ? "&" : "") +
+        k + "=" + encodeURIComponent(value);
+    }
+  }
+
+  return out;
+}
+
 const StatusMap = {
     "Ongoing": 0,
     "Completed": 1,
@@ -179,9 +141,19 @@ class DefaultExtension extends MProvider {
       this.client = new ProxyClient(this.prefs);
       this.total = 100;
     }
-    getHeaders(url) {
-        throw new Error("getHeaders not implemented");
+    mangaData(manga) {
+        return {
+            name: fixMojibake(manga.title),
+            imageUrl: this.prefs.get("proxy-use") ? `${this.prefs.get("proxy-url")}/image?url=${this.source.baseUrl+manga.photo}` : this.source.baseUrl+manga.photo,
+            link: `${this.source.baseUrl}/manga/${manga.id}`,
+            description: fixMojibake(manga.description),
+            status: manga.hiatus != "No" ? StatusMap["on_hiatus"] : StatusMap[manga.status],
+            genre: manga.genres,
+            author: manga.authors?.join(" & ") ?? "Unknown",
+            artist: manga.artists?.join(" & ") ?? "Unknown"
+        }
     }
+    
     async getPopular(page) {
         let first = await this.client.get(`${this.source.baseUrl}/view-all/most-tracked.data?adult=1&_routes=pages/ViewAllPage`)
         // need to request first page every time because its the only one with the max pages number
@@ -195,7 +167,6 @@ class DefaultExtension extends MProvider {
             // 7 is {manga_list, pagination}
             manga = hydro.manga_list;
         }
-
         return {
             list: manga.map(c => this.mangaData(c)),
             hasNextPage: page != first_hydro.pagination.total_pages
@@ -204,20 +175,6 @@ class DefaultExtension extends MProvider {
     get supportsLatest() {
         return true;
     }
-
-    mangaData(manga) {
-        return {
-            name: fixMojibake(manga.title),
-            imageUrl: this.prefs.get("proxy-use") ? `${this.prefs.get("proxy-url")}/image?url=${this.source.baseUrl+manga.photo}` : this.source.baseUrl+manga.photo,
-            link: `${this.source.baseUrl}/manga/${manga.id}`,
-            description: fixMojibake(manga.description),
-            status: manga.hiatus != "No" ? StatusMap["on_hiatus"] : StatusMap[manga.status],
-            genre: manga.genres,
-            author: manga.authors?.join(" & ") ?? "Unknown",
-            artist: manga.artists?.join(" & ") ?? "Unknown"
-        }
-    }
-
     async getLatestUpdates(page) {
         let first = await this.client.get(`${this.source.baseUrl}/view-all/latest-updates.data?adult=1&_routes=pages/ViewAllPage`);
         // need to request first page every time because its the only one with the max pages number
@@ -237,8 +194,52 @@ class DefaultExtension extends MProvider {
         }
     }
 
-    async search(query, page, filters) {
-        let res = await this.client.get(`${this.source.baseUrl}/search.data?search=${query}&adult=1&page=${page}&perPage=${this.total}&_routes=pages%2FSearchPage`);
+    async search(query, page=1, filters) {
+        let url = `${this.source.baseUrl}/search.data`
+        let params = {};
+    
+        if (query) {
+            params["search"] = query;
+        }
+        
+        for (const filter of filters) {
+            if (filter.type == "GenreFilter") {
+                params["genre"] = [];
+                filter.state.forEach(e => {
+                    if (e.state === 1) params["genre"].push(e.value);
+                    if (e.state === 2) params["genre"].push(`-${e.value}`);
+                });
+            }
+            if (filter.type == "AuthorFilter") {
+                params["author"] = filter.state;
+            }
+            if (filter.type == "ArtistFilter") {
+                params["artist"] = filter.state;
+            }
+            if (filter.type == "OriginFilter") {
+                params["orgin"] = filter.state.some(e => e.state && e.value === "all")
+                    ? filter.state
+                        .filter(e => e.value !== "all")
+                        .map(e => e.value)
+                    : filter.state
+                        .filter(e => e.state && e.value !== "all")
+                        .map(e => e.value);
+            }
+            if (filter.type == "StatusFilter") {
+                let val = filter.values[filter.state].value;
+                if (val == "Any") continue;
+                params["status"] = val;
+                }
+            if (filter.type == "SortFilter") {
+                params["sortBy"] = filter.values[filter.state].value;
+            }
+        }
+        
+        params["adult"]=1;
+        params["perPage"] = this.total;
+        params["_routes"] = "pages/SearchPage"
+        
+        let res = await this.client.get(`${this.source.baseUrl}/search.data?${buildParams(params)}`);
         let hydrated = hydrate(4, JSON.parse(res.body))
         // 4 is {allGenres,displayMode,filters,page,pagination,query,results}
 
@@ -277,10 +278,10 @@ class DefaultExtension extends MProvider {
         let res;
         if (url.includes("?source=user")) {
           let id = url.split("?")[0].split("/")[4];
-          res = await this.client.get(`${this.source.baseUrl}/api/uploads/${id}/images`);   
+          res = await this.client.get(`${this.source.apiUrl}/uploads/${id}/images`);   
         } else {
           let id = url.split("/")[4];
-          res = await this.client.get(`${this.source.baseUrl}/api/chapters/${id}/images`);        
+          res = await this.client.get(`${this.source.apiUrl}/chapters/${id}/images`);        
         }
         let data = JSON.parse(res.body);
         let images = [];
@@ -292,8 +293,265 @@ class DefaultExtension extends MProvider {
         }
         return images;
     }
+    // not needed
+    // async getGenres() {
+    //     let res = await this.client.get(`${this.source.baseUrl}/collections.data?adult=1&_routes=pages%2FCollectionsPage`);
+    //     let hydro = hydrate(6, JSON.parse(res.body));
+    //     let genres = [];
+    //     for (const collection of hydro) {
+    //         genres.push(collection.genre);
+    //     }
+    //     return genres;
+    // }
     getFilterList() {
-        return []
+        return [
+          {
+              type_name: "TextFilter",
+              type: "AuthorFilter",
+              name: "Author",
+          },
+          {
+              type_name: "TextFilter",
+              type: "ArtistFilter",
+              name: "Artist",
+          },
+          {
+                type_name: "SelectFilter",
+                type: "SortFilter",
+                name: "Sort",
+                state: 0,
+                values: [
+                    ["LATEST", "latest"],
+                    ["A -> Z", "alphabetical"],
+                    ["CHAPTERS", "chapters"],
+                    ["MOST VIEWED", "views"],
+                    ["MOST TRACKED", "tracked"],
+                    ["TOP RATED", "rating"]
+                ].map(x => ({ type_name: 'SelectOption', name: x[0], value: x[1] }))
+            },
+          {
+              type_name: "SelectFilter",
+              type: "StatusFilter",
+              name: "Status",
+              state: 0,
+              values: [
+                  "Any",
+                  "Ongoing",
+                  "Completed",
+                  "Hiatus"
+              ].map(x => ({ type_name: 'SelectOption', name: x, value: x }))
+          },
+          {
+              type_name: "GroupFilter",
+              type: "OriginFilter",
+              name: "Origin",
+              state: [
+                  ["All", "all"],
+                  ["Manga", "JP"],
+                  ["Manhwa", "KR"],
+                  ["Manhua", "CN"],
+                  ["One Shot", "ONESHOT"]
+              ].map(x => ({ type_name: 'CheckBox', name: x[0], value: x[1] }))
+          },
+          {
+                type_name: "GroupFilter",
+                type: "GenreFilter",
+                name: "Genre",
+                state: [
+                    "Academy",
+                    "Acting",
+                    "action",
+                    "Action",
+                    "Adeventure",
+                    "adult",
+                    "Adult",
+                    "adventure",
+                    "Adventure",
+                    "Aliens",
+                    "and slice-of-life",
+                    "Animals",
+                    "Anthology",
+                    "Avant Garde",
+                    "award_winning",
+                    "Award winning",
+                    "Award Winning",
+                    "Based on an Anime",
+                    "boys' love",
+                    "boys_love",
+                    "Boys Love",
+                    "Boys' Love",
+                    "Bully",
+                    "business",
+                    "child abuse",
+                    "child neglect",
+                    "comedy",
+                    "Comedy",
+                    "Comic",
+                    "Cooking",
+                    "Crime",
+                    "Crossdressing",
+                    "Delinquents",
+                    "Demons",
+                    "difficult childhood",
+                    "doujinshi",
+                    "Doujinshi",
+                    "drama",
+                    "Drama",
+                    "ecchi",
+                    "Ecchi",
+                    "erotica",
+                    "Erotica",
+                    "fantasy",
+                    "Fantasy",
+                    "female protagonist",
+                    "femdom",
+                    "Fight",
+                    "Fluff",
+                    "gender_bender",
+                    "Gender bender",
+                    "Gender Bender",
+                    "Genderswap",
+                    "Genius MC",
+                    "Ghosts",
+                    "girls_love",
+                    "Girls love",
+                    "Girls Love",
+                    "Girls' Love",
+                    "gore",
+                    "Gourmet",
+                    "Gyaru",
+                    "harem",
+                    "Harem",
+                    "hentai",
+                    "Hentai",
+                    "historical",
+                    "Historical",
+                    "horror",
+                    "Horror",
+                    "Hunters",
+                    "Idol",
+                    "Idols",
+                    "Incest",
+                    "Isekai",
+                    "josei",
+                    "Josei",
+                    "Loli",
+                    "Lolicon",
+                    "Mafia",
+                    "magic",
+                    "Magic",
+                    "Magical Girls",
+                    "mahou_shoujo",
+                    "Mahou Shoujo",
+                    "manga",
+                    "Manga",
+                    "Mangatoon",
+                    "manhua",
+                    "Manhua",
+                    "manhwa",
+                    "Manhwa",
+                    "martial arts",
+                    "martial_arts",
+                    "Martial arts",
+                    "Martial Arts",
+                    "mature",
+                    "Mature",
+                    "mecha",
+                    "Mecha",
+                    "Medical",
+                    "Medicaldrama",
+                    "medieval area",
+                    "military",
+                    "Military",
+                    "Monster Girls",
+                    "monsters",
+                    "Monsters",
+                    "music",
+                    "Music",
+                    "mystery",
+                    "Mystery",
+                    "myth",
+                    "naruto",
+                    "Ninja",
+                    "nobility",
+                    "office worker",
+                    "office workers",
+                    "Office Workers",
+                    "Official",
+                    "One Shot",
+                    "Otome",
+                    "Philosophical",
+                    "Police",
+                    "politics",
+                    "Post-Apocalyptic",
+                    "psychological",
+                    "Psychological",
+                    "red flag",
+                    "reincarnation",
+                    "Reincarnation",
+                    "Reverse Harem",
+                    "romance",
+                    "Romance",
+                    "royalty",
+                    "Samurai",
+                    "school_life",
+                    "School life",
+                    "School_life",
+                    "School Life",
+                    "sci-fi",
+                    "Sci-fi",
+                    "Sci-Fi",
+                    "seinen",
+                    "Seinen",
+                    "Shota",
+                    "Shotacon",
+                    "shoujo",
+                    "Shoujo",
+                    "shoujo_ai",
+                    "Shoujo Ai",
+                    "shounen",
+                    "Shounen",
+                    "shounen_ai",
+                    "Shounen Ai",
+                    "slice_of_life",
+                    "Slice of life",
+                    "Slice of Life",
+                    "smut",
+                    "Smut",
+                    "sports",
+                    "Sports",
+                    "Superhero",
+                    "supernatural",
+                    "Supernatural",
+                    "Survival",
+                    "suspense",
+                    "Suspense",
+                    "system",
+                    "System",
+                    "thriller",
+                    "Thriller",
+                    "Time Travel",
+                    "Traditional Games",
+                    "tragedy",
+                    "Tragedy",
+                    "Vampires",
+                    "Video Games",
+                    "Villainess",
+                    "Virtual Reality",
+                    "War",
+                    "webtoon",
+                    "Webtoon",
+                    "webtoons",
+                    "wuxia",
+                    "Wuxia",
+                    "yaoi",
+                    "Yaoi",
+                    "yuri",
+                    "Yuri",
+                    "Zombies"
+                ].map(x => ({ type_name: 'TriState', name: x, value: x }))
+            }
+        ]
     }
     getSourcePreferences() {
         return [
