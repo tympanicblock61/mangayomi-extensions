@@ -9,7 +9,7 @@ const mangayomiSources = [{
     "isManga": true,
     "isNsfw": true,
     "hasCloudflare": true,
-    "version": "0.0.6",
+    "version": "0.0.7",
     "pkgPath": "manga/src/en/mangadot.js",
     "notes": ""
 }];
@@ -46,14 +46,12 @@ class ProxyClient {
                 "x-api-key": this.prefs.get("proxy-key"),
                 "x-impersonate": this.prefs.get("proxy-impersonate")
             },
-            {
+            JSON.stringify({
                 url,
                 method,
                 headers,
-                ...(body != null && {
-                    body: JSON.stringify(body)
-                })
-            }
+                body
+            })
         );
     }
 
