@@ -9,7 +9,7 @@ const mangayomiSources = [{
     "isManga": true,
     "isNsfw": true,
     "hasCloudflare": true,
-    "version": "0.0.7",
+    "version": "0.0.8",
     "pkgPath": "manga/src/en/mangadot.js",
     "notes": ""
 }];
@@ -233,7 +233,8 @@ class DefaultExtension extends MProvider {
             }
         }
         
-        params["adult"]=1;
+        params["adult"] = 1;
+        params["page"] = page;
         params["perPage"] = this.total;
         params["_routes"] = "pages/SearchPage"
         
