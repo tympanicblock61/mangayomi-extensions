@@ -9,7 +9,7 @@ const mangayomiSources = [{
     "isManga": true,
     "isNsfw": true,
     "hasCloudflare": true,
-    "version": "0.0.5",
+    "version": "0.0.6",
     "pkgPath": "manga/src/en/mangadot.js",
     "notes": ""
 }];
@@ -72,7 +72,7 @@ function hydrate(rootIndex, table) {
     if (typeof value === "number" && typeof table[value] == "string") {
         const s = table[value].trim();
         if (s[0] === "[" && s[s.length - 1] === "]") {
-            return JSON.parse(s);
+            try {return JSON.parse(s);} catch {}
         }
     }
     if (typeof value === "number" && table[value] !== undefined) {
