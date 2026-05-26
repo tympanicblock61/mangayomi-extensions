@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.1.7",
+    "version": "0.1.8",
     "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
@@ -66,7 +66,7 @@ class DefaultExtension extends MProvider {
         if (this.encoder && this.decoder) return;
 
         const res = await this.client.get(
-            `${this.source.baseUrl}/assets/build/35595e3de3c99889c1aa70/dist/secure-tfgaak-CfBLOxi1.js`
+            `${this.source.baseUrl}/assets/build/35595e3de3c99889c1aa70/dist/secure-tfmfci-CzKVYUgv.js`
         );
 
         const src = stripModule(res.body);
@@ -304,7 +304,7 @@ class DefaultExtension extends MProvider {
                     try {
                         const input = "/manga/zdgw3/chapters";
                         const encoded = ef(input);
-                        if (!encoded.startsWith("_hl1dFTuA")) continue;
+                        if (!encoded.startsWith("hCvm0ZMC2")) continue;
                         const decoded = df(encoded);
                         if (decoded === input) {
                             return { encode: ef, decode: df };
@@ -335,7 +335,7 @@ class DefaultExtension extends MProvider {
     comicData(comic) {
         return {
             name: comic.title,
-            imageUrl: comic.poster.large ?? comic.poster.medium,
+            imageUrl: comic?.poster?.large ?? comic?.poster?.medium,
             link: `${this.source.baseUrl}/title/${comic.hid}`,
             description: comic.synopsis,
             status: StatusMap[comic.status] ?? 5,
