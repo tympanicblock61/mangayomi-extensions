@@ -6,8 +6,10 @@ const mangayomiSources = [{
     "iconUrl": "https://www.google.com/s2/favicons?sz=256&domain=https://kaa.lt",
     "typeSource": "multi",
     "itemType": 1,
-    "version": "0.0.1",
-    "pkgPath": "",
+    "isManga":false,
+    "hasCloudflare":true,
+    "version": "0.0.2",
+    "pkgPath": "anime/src/all/kaa.js",
     "notes": ""
 }];
 
