@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 1,
     "isManga":false,
     "hasCloudflare":true,
-    "version": "0.0.3",
+    "version": "0.0.4",
     "pkgPath": "anime/src/all/kaa.js",
     "notes": ""
 }];
@@ -310,7 +310,7 @@ class DefaultExtension extends MProvider {
       }
     }
     async getPopular(page) {
-        let res = await this.client.get(`${this.source.apiUrl}/show/recent?type=all&page=${page}`);
+        let res = await this.client.get(`${this.source.apiUrl}/show/popular?page=${page}`);
         let data = JSON.parse(res.body);
         return {
           list: await Promise.all(
