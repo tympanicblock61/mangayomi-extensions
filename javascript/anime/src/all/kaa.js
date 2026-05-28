@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 1,
     "isManga":false,
     "hasCloudflare":true,
-    "version": "0.0.4",
+    "version": "0.0.5",
     "pkgPath": "anime/src/all/kaa.js",
     "notes": ""
 }];
@@ -316,7 +316,7 @@ class DefaultExtension extends MProvider {
           list: await Promise.all(
               (data?.result ?? []).map(c => this.getMangaData(c, false))
           ) ?? [],
-          hasNextPage: data?.hadNext ?? false
+          hasNextPage: (data?.page_count != page) ?? false
         }
     }
     get supportsLatest() {
