@@ -8,11 +8,10 @@ const mangayomiSources = [{
     "itemType": 1,
     "isManga":false,
     "hasCloudflare":true,
-    "version": "0.0.5",
+    "version": "0.0.6",
     "pkgPath": "anime/src/all/kaa.js",
     "notes": ""
 }];
-
 var B64CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 var B64TABLE = (function() {
     var t = {};
@@ -88,7 +87,7 @@ const StatusMap = {
 }
 
 // modified to take string instead of url
-async function m3u8Extractor(url, text, headers) {
+async function m3u8Extractor(url, text, headers, incSubs) {
     // https://developer.apple.com/documentation/http-live-streaming/creating-a-multivariant-playlist
     // https://developer.apple.com/documentation/http-live-streaming/adding-alternate-media-to-a-playlist
     // define attribute lists
@@ -170,7 +169,7 @@ async function m3u8Extractor(url, text, headers) {
             quality: quality,
             originalUrl: stream.url,
             headers: headers,
-            subtitles: subs ?? null,
+            subtitles: subs ?? incSubs ?? null,
             audios: auds ?? null
         });
     }
@@ -179,7 +178,7 @@ async function m3u8Extractor(url, text, headers) {
         quality: '',
         originalUrl: url,
         headers: headers,
-        subtitles: null,
+        subtitles: incSubs ?? null,
         audios: null
     }];
 }
@@ -250,6 +249,14 @@ function getYears(startYear) {
     return years;
 }
 
+function fixMojibake(str) {
+    let out = "";
+    for (let i = 0; i < str.length; i++) {
+        out += String.fromCharCode(str.charCodeAt(i) & 0xFF);
+    }
+    return decodeURIComponent(escape(out));
+}
+
 class DefaultExtension extends MProvider {
     constructor() {
       super();
@@ -290,7 +297,7 @@ class DefaultExtension extends MProvider {
           dateUpload: String(time.ms()),
           thumbnailUrl: d?.thumbnail != null ? this.image(`${this.source.baseUrl}/image/thumbnail/${d.thumbnail.hq ?? d.thumbnail.sm}.webp`) : null,
           description: "",
-          duration: String(manga.episode_duration)
+          duration: epd?.duration_ms == null ? String(manga.episode_duration) : String(epd.duration_ms)
         })
       }
       return episodes;
@@ -354,18 +361,24 @@ class DefaultExtension extends MProvider {
           }
         }
     
-        let res = await this.client.post(`${this.source.apiUrl}/fsearch`, {
-          "content-type":"application/json"
-        }, {
-          'query': query,
-          'page': page,
-          'filters': _btoa(JSON.stringify({
+        const filter = _btoa(JSON.stringify({
             ...(genres.length > 0 ? {"genres": genres} : {}),
             ...(year != new Date().getFullYear() && year != null ? {"year": year} : {}),
             ...(status != "all" ? {"status": status} : {}),
             ...(type != "all" ? {"type": type} : {})
-          }))
-        })
+        }))
+
+        if (query == null || query.length == "") {
+            let res = await this.client.get(`${this.source.apiUrl}/anime?page=${page}&filters=${filter}`)
+        } else {
+            let res = await this.client.post(`${this.source.apiUrl}/fsearch`, {
+                "content-type":"application/json"
+            }, {
+                'query': query,
+                'page': page,
+                'filters': filter
+            })
+        }
         let data = JSON.parse(res.body);
         return {
           list: await Promise.all(
@@ -396,6 +409,10 @@ class DefaultExtension extends MProvider {
             } else {
               idUrl= props.thumbnails[1];
             }
+            const subtitles = [];
+            for (const sub of (props?.subtitles[1] ?? [])) {
+              subtitles.push({ label: fixMojibake(sub[1].name[1]), file: sub[1].src[1] })
+            }
             const [id, _] = idUrl.split("/").slice(-2);
             let master = await this.client.client.get(`https://bl.krussdomi.com/playlist/${id}/master.m3u8`, {
               'origin': 'https://krussdomi.com'
@@ -404,19 +421,30 @@ class DefaultExtension extends MProvider {
               ...(
                 await m3u8Extractor(`https://bl.krussdomi.com/playlist/${id}/`, master.body, {
                   'origin': 'https://krussdomi.com'
-                })
+                }, subtitles)
               )
             )
           }
           if (server.name == "VidStreaming") {
             const [_,id] = server.src.split("?")[1].split("&")[0].split("=");
+            // get subtitles
+            let res2 = await this.client.get(server.src);
+            let doc = new Document(res2.body);
+            const props = JSON.parse(doc.selectFirst("astro-island").attr("props"));
+            const subtitles = [];
+            for (const sub of (props?.subtitles[1] ?? [])) {
+              subtitles.push({ label: fixMojibake(sub[1].name[1]), file: sub[1].src[1] })
+            }
+            // get master
             let master = await this.client.get(`https://hls.krussdomi.com/manifest/${id}/master.m3u8`, {
               'origin': 'https://krussdomi.com'
             });
             videos.push(...(await m3u8Extractor(`https://hls.krussdomi.com/manifest/${id}/`, master.body, {
               'origin': 'https://krussdomi.com'
-            })))
+            }, subtitles)))
           }
+          // BirdStream never loads so i cant even fucking figure the system out to even implement it
+          //if (server.name == "BirdStream") {}
         }
         // handle different servers
         // VidStreaming, -> https://krussdomi.com/cat-player/vast?id=6a0a57c2ab00ea3267b2ff0c&source=vidstream&ln=en-US -> https://hls.krussdomi.com/manifest/${id}/master.m3u8
