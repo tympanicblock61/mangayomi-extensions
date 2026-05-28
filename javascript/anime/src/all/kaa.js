@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 1,
     "isManga":false,
     "hasCloudflare":true,
-    "version": "0.0.2",
+    "version": "0.0.3",
     "pkgPath": "anime/src/all/kaa.js",
     "notes": ""
 }];
@@ -288,7 +288,7 @@ class DefaultExtension extends MProvider {
           url: `${this.source.baseUrl}/${manga.slug}/ep-${d.episode_string}-${d.slug}`,
           // manga has start date, each episode has day and time uploaded
           dateUpload: String(time.ms()),
-          thumbnailUrl: this.image(`${this.source.baseUrl}/image/thumbnail/${d.thumbnail.hq ?? d.thumbnail.sm}.${d?.poster?.formats == null ? "webp" : d?.posters?.formats[0]}`),
+          thumbnailUrl: d?.thumbnail != null ? this.image(`${this.source.baseUrl}/image/thumbnail/${d.thumbnail.hq ?? d.thumbnail.sm}.webp`) : null,
           description: "",
           duration: String(manga.episode_duration)
         })
@@ -333,7 +333,6 @@ class DefaultExtension extends MProvider {
         }
     }
     async search(query, page, filters) {
-        if (query == null || query.length == 0) return null;
         let genres = [];
         let year = null;
         let status = "";
@@ -586,3 +585,4 @@ class DefaultExtension extends MProvider {
         ]
     }
 }
+
