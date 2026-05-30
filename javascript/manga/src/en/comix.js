@@ -8,7 +8,7 @@ const mangayomiSources = [{
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
-    "version": "0.1.8",
+    "version": "0.1.9",
     "pkgPath": "manga/src/en/comix.js",
     "notes": "this is not finished, it was rushed, missing some options, but works"
 }];
@@ -66,7 +66,7 @@ class DefaultExtension extends MProvider {
         if (this.encoder && this.decoder) return;
 
         const res = await this.client.get(
-            `${this.source.baseUrl}/assets/build/35595e3de3c99889c1aa70/dist/secure-tfmfci-CzKVYUgv.js`
+            `${this.source.baseUrl}/assets/build/35595e3de3c99889c1aa70/dist/secure-tfu3ef-CDCmLh9b.js`
         );
 
         const src = stripModule(res.body);
@@ -304,7 +304,7 @@ class DefaultExtension extends MProvider {
                     try {
                         const input = "/manga/zdgw3/chapters";
                         const encoded = ef(input);
-                        if (!encoded.startsWith("hCvm0ZMC2")) continue;
+                        if (!encoded.startsWith("6DV7EOsb")) continue;
                         const decoded = df(encoded);
                         if (decoded === input) {
                             return { encode: ef, decode: df };
