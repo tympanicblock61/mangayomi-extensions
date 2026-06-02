@@ -1,15 +1,15 @@
 const mangayomiSources = [{
     "name": "kagane",
     "lang": "en",
-    "baseUrl": "https://kagane.org",
-    "apiUrl": "https://{}kagane.org/api",
-    "iconUrl": "https://www.google.com/s2/favicons?sz=256&domain=https://kagane.org",
+    "baseUrl": "https://kagane.to",
+    "apiUrl": "https://{}kagane.to/api",
+    "iconUrl": "https://www.google.com/s2/favicons?sz=256&domain=https://kagane.to",
     "typeSource": "single",
     "itemType": 0,
     "isManga": true,
     "isNsfw": true,
     "hasCloudflare": true,
-    "version": "0.0.1",
+    "version": "0.0.2",
     "pkgPath": "manga/src/en/kagane.js",
     "notes": "requires cloudflare proxy"
 }];
@@ -223,7 +223,7 @@ class DefaultExtension extends MProvider {
     }
     
     async getPopular(page) {
-        // https://yuzuki.kagane.org/api/v2/search/series?page=0&size=30&sort=avg_views_today%2Cdesc
+        // https://yuzuki.kagane.to/api/v2/search/series?page=0&size=30&sort=avg_views_today%2Cdesc
         return await this.searchApi(null, "avg_views_today,desc", page);
     }
     get supportsLatest() {
