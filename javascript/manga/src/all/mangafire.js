@@ -17,7 +17,7 @@ const mangayomiSources = [
     "typeSource": "single",
     "itemType": 0,
     "isNsfw": true,
-    "version": "0.0.2",
+    "version": "0.0.3",
     "pkgPath": "manga/src/all/mangafire.js"
   }
 ];
