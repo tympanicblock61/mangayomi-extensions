@@ -17,7 +17,7 @@ const mangayomiSources = [
     "typeSource": "single",
     "itemType": 0,
     "isNsfw": true,
-    "version": "0.0.3",
+    "version": "0.0.4",
     "pkgPath": "manga/src/all/mangafire.js"
   }
 ];
@@ -204,8 +204,7 @@ const SPEC = {
               ["path", "name"],
               ["add", ["add", ["lit", ": "], ["path", "name"]], ["lit", ""]],
               ["lit", ""]]]
-       ]
-      }
+      ]
     },
     "url": {
       "path": "id",
