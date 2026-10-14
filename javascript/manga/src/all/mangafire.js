@@ -17,7 +17,7 @@ const mangayomiSources = [
     "typeSource": "single",
     "itemType": 0,
     "isNsfw": true,
-    "version": "0.0.4",
+    "version": "0.0.5",
     "pkgPath": "manga/src/all/mangafire.js"
   }
 ];
@@ -522,7 +522,7 @@ const SPEC = {
           "value": "268928"
         }
       ],
-      "param": "genres_in",
+      "param": "genres_in[]",
       "omitWhenAllSelected": false,
       "requiresTermSelection": false
     },
@@ -682,7 +682,7 @@ const SPEC = {
           "value": "268969"
         }
       ],
-      "param": "theme_ids",
+      "param": "theme_ids[]",
       "omitWhenAllSelected": false,
       "requiresTermSelection": false
     },
@@ -710,7 +710,7 @@ const SPEC = {
           "value": "268918"
         }
       ],
-      "param": "demographics",
+      "param": "demographics[]",
       "omitWhenAllSelected": false,
       "requiresTermSelection": false
     },
