@@ -194,75 +194,18 @@ const SPEC = {
     "name": {
       "hook": "chapterNameWithVolume",
       "template": [
-        [
-          "expr",
-          [
-            "tern",
-            [
-              "path",
-              "volume"
-            ],
-            [
-              "add",
-              [
-                "add",
-                [
-                  "lit",
-                  "Volume: "
-                ],
-                [
-                  "path",
-                  "volume"
-                ]
-              ],
-              [
-                "lit",
-                ", "
-              ]
-            ],
-            [
-              "lit",
-              ""
-            ]
-          ]
-        ],
-        [
-          "text",
-          "Chapter: "
-        ],
-        [
-          "expr",
-          [
-            "path",
-            "number"
-          ]
-        ],
-        [
-          "expr",
-          [
-            "tern",
-            [
-              "path",
-              "name"
-            ],
-            [
-              "add",
-              [
-                "lit",
-                ", "
-              ],
-              [
-                "path",
-                "name"
-              ]
-            ],
-            [
-              "lit",
-              ""
-            ]
-          ]
-        ]
-      ]
+        ["text", "Ch. "],
+        ["expr", ["path", "number"]],
+        ["expr", ["tern",
+              ["path", "volume"],
+              ["add", ["add", ["lit", " (Vol. "], ["path", "volume"]], ["lit", ")"]],
+              ["lit", ""]]],
+        ["expr", ["tern",
+              ["path", "name"],
+              ["add", ["add", ["lit", ": "], ["path", "name"]], ["lit", ""]],
+              ["lit", ""]]]
+       ]
+      }
     },
     "url": {
       "path": "id",
